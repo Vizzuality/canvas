@@ -31,6 +31,10 @@ export default function Canvas() {
       <Layer>
         <Image
           image={image}
+          x={0}
+          y={0}
+          width={window.innerWidth}
+          height={window.innerHeight}
           globalCompositeOperation="source-over"
         />
       </Layer>
