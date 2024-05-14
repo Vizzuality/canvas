@@ -46,7 +46,7 @@ export default function Canvas() {
       const x = lastPoint.x + (Math.sin(angle) * i) - 25;
       const y = lastPoint.y + (Math.cos(angle) * i) - 25;
       const r = Math.random() * 360;
-      const s = Math.random() * 2 + 1;
+      const s = Math.random() * 0.5 + 1;
       newPoints.push({ x, y, r, s });
       lastPointRef.current = { x, y, r, s };
     }
@@ -87,11 +87,11 @@ export default function Canvas() {
               image={brush}
               x={point.x}
               y={point.y}
-              width={154}
-              height={154}
+              width={window.innerHeight / 3}
+              height={window.innerHeight / 3}
               opacity={0.1}
-              offsetX={77}
-              offsetY={77}
+              offsetX={window.innerHeight / 6}
+              offsetY={window.innerHeight / 6}
               rotation={point.r}
               scale={{ x: point.s, y: point.s }}
               globalCompositeOperation="destination-out"
