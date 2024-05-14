@@ -95,6 +95,7 @@ export default function Canvas() {
               rotation={point.r}
               scale={{ x: point.s, y: point.s }}
               globalCompositeOperation="destination-out"
+              perfectDrawEnabled={false}
             />
           );
         })}
