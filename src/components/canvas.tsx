@@ -1,26 +1,58 @@
-import { useState } from 'react';
-import { Stage, Layer, Line, KonvaNodeEvents, Rect, Image } from 'react-konva';
+import { KonvaEventObject } from 'konva/lib/Node';
+import { useCallback, useRef, useState } from 'react';
+import { Stage, Layer, Rect, Image } from 'react-konva';
 import useImage from 'use-image';
 
+type Point = {
+  x: number;
+  y: number;
+  s: number;
+  r?: number;
+};
+
+function distanceBetween(point1: Pick<Point, "x" | "y">, point2: Pick<Point, "x" | "y">) {
+  return Math.sqrt(Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2));
+}
+
+function angleBetween(point1: Pick<Point, "x" | "y">, point2: Pick<Point, "x" | "y">) {
+  return Math.atan2( point2.x - point1.x, point2.y - point1.y );
+}
+
 export default function Canvas() {
-  const [lines, setLines] = useState<{ points: number[]}[]>([]);
+  const lastPointRef = useRef<Point | null>(null);
+  const [points, setPoints] = useState<Point[]>([]);
 
   const [image] = useImage("/test.jpg");
+  const [brush] = useImage("/brush.png");
 
-  const handleMouseMove: KonvaNodeEvents["onMouseMove"] = (e) => {
+  const handleMouseMove = useCallback((e: KonvaEventObject<MouseEvent>) => {
     // no drawing - skipping
     const stage = e.target.getStage();
     if (!stage) return;
     const point = stage.getPointerPosition();
     if (!point) return;
-    const lastLine = lines[lines.length - 1] || { points: [] };
-    // add point
-    lastLine.points = lastLine.points.concat([point.x, point.y]);
 
-    // replace last
-    lines.splice(lines.length - 1, 1, lastLine);
-    setLines(lines.concat());
-  };
+    let lastPoint = lastPointRef.current;
+    if (!lastPoint) {
+      lastPoint = { x: point.x + 0.01, y: point.y + 0.01, r: 0, s: 1 };
+    }
+    const dist = distanceBetween(lastPoint, point);
+    const angle = angleBetween(lastPoint, point);
+    const newPoints: Point[] = [];
+
+    for (let i = 0; i < dist; i += 20) {
+      if (!lastPoint) return;
+
+      const x = lastPoint.x + (Math.sin(angle) * i) - 25;
+      const y = lastPoint.y + (Math.cos(angle) * i) - 25;
+      const r = Math.random() * 360;
+      const s = Math.random() * 2 + 1;
+      newPoints.push({ x, y, r, s });
+      lastPointRef.current = { x, y, r, s };
+    }
+
+    setPoints((prev) => prev.concat(newPoints));
+  }, []);
 
   return (
     <Stage
@@ -28,7 +60,7 @@ export default function Canvas() {
       height={window.innerHeight}
       onMouseMove={handleMouseMove}
     >
-      <Layer>
+      <Layer listening={false}>
         <Image
           image={image}
           x={0}
@@ -38,7 +70,7 @@ export default function Canvas() {
           globalCompositeOperation="source-over"
         />
       </Layer>
-      <Layer>
+      <Layer listening={false}>
         <Rect
           x={0}
           y={0}
@@ -48,18 +80,24 @@ export default function Canvas() {
           globalCompositeOperation="source-over"
         />
 
-        {lines.map((line, i) => (
-          <Line
-            key={i}
-            points={line.points}
-            stroke="#FFCC00"
-            strokeWidth={window.innerWidth / 10}
-            tension={0.1}
-            lineCap="round"
-            lineJoin="round"
-            globalCompositeOperation='xor'
-          />
-        ))}
+        {points.map((point, j) => {
+          return (
+            <Image
+              key={`${j}`}
+              image={brush}
+              x={point.x}
+              y={point.y}
+              width={154}
+              height={154}
+              opacity={0.1}
+              offsetX={77}
+              offsetY={77}
+              rotation={point.r}
+              scale={{ x: point.s, y: point.s }}
+              globalCompositeOperation="destination-out"
+            />
+          );
+        })}
       </Layer>
     </Stage>
   );
